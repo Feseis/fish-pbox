@@ -1,12 +1,16 @@
 package me.feseis.pbox.server.controller;
 
-import java.util.Map;
-
 import jakarta.validation.Valid;
-import me.feseis.pbox.server.dto.MarkReadRequest;
-import me.feseis.pbox.server.dto.MessageListResponse;
-import me.feseis.pbox.server.dto.SendSmsRequest;
-import me.feseis.pbox.server.dto.SmsMessageResponse;
+import lombok.RequiredArgsConstructor;
+import me.feseis.pbox.server.dto.common.DeleteResponse;
+import me.feseis.pbox.server.dto.health.HealthResponse;
+import me.feseis.pbox.server.dto.sms.MarkReadRequest;
+import me.feseis.pbox.server.dto.sms.MarkReadResponse;
+import me.feseis.pbox.server.dto.sms.MessageListResponse;
+import me.feseis.pbox.server.dto.sms.SendSmsByApiRequest;
+import me.feseis.pbox.server.dto.sms.SendSmsByUserRequest;
+import me.feseis.pbox.server.dto.sms.SmsMessageResponse;
+import me.feseis.pbox.server.service.HealthService;
 import me.feseis.pbox.server.service.SmsMessageService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,17 +23,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/sms")
+@RequiredArgsConstructor
 public class SmsController {
 
     private final SmsMessageService smsMessageService;
-
-    public SmsController(SmsMessageService smsMessageService) {
-        this.smsMessageService = smsMessageService;
-    }
+    private final HealthService healthService;
 
     @PostMapping("/send")
-    public SmsMessageResponse send(@Valid @RequestBody SendSmsRequest request) {
-        return smsMessageService.send(request);
+    public SmsMessageResponse sendByUser(@Valid @RequestBody SendSmsByUserRequest request) {
+        return smsMessageService.sendByUser(request);
+    }
+
+    @PostMapping("/send-api")
+    public SmsMessageResponse sendByApi(@Valid @RequestBody SendSmsByApiRequest request) {
+        return smsMessageService.sendByApi(request);
     }
 
     @GetMapping("/messages")
@@ -41,21 +48,21 @@ public class SmsController {
     }
 
     @PostMapping("/messages/read")
-    public Map<String, Integer> markRead(@Valid @RequestBody MarkReadRequest request) {
-        return Map.of("updated", smsMessageService.markRead(request));
+    public MarkReadResponse markRead(@Valid @RequestBody MarkReadRequest request) {
+        return new MarkReadResponse(smsMessageService.markRead(request));
     }
 
     @DeleteMapping("/messages/{id}")
-    public Map<String, Boolean> delete(
-            @PathVariable("id") Long id,
+    public DeleteResponse delete(
+            @PathVariable("id") long id,
             @RequestParam(value = "receiverPhone", required = false) String receiverPhone) {
         smsMessageService.delete(id, receiverPhone);
-        return Map.of("deleted", true);
+        return new DeleteResponse(true);
     }
 
     @GetMapping("/health")
-    public Map<String, Boolean> health() {
-        smsMessageService.checkDatabase();
-        return Map.of("database", true);
+    public HealthResponse health() {
+        healthService.checkDatabase();
+        return new HealthResponse(true);
     }
 }

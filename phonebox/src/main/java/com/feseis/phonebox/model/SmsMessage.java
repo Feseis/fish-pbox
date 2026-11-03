@@ -9,7 +9,7 @@ public class SmsMessage {
     public String senderName = "";
     public String receiverPhone = "";
     public String content = "";
-    public String messageType = "TEXT";
+    public String messageType = "USER";
     public boolean receiverRead;
     public String createdAt = "";
 
@@ -20,7 +20,7 @@ public class SmsMessage {
         message.senderName = json.isNull("senderName") ? "" : json.optString("senderName", "");
         message.receiverPhone = json.optString("receiverPhone", "");
         message.content = json.optString("content", "");
-        message.messageType = json.optString("messageType", "TEXT");
+        message.messageType = json.optString("messageType", "USER");
         message.receiverRead = json.optBoolean("receiverRead", false);
         message.createdAt = json.isNull("createdAt") ? "" : json.optString("createdAt", "");
         return message;

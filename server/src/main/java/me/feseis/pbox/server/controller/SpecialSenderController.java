@@ -1,12 +1,13 @@
 package me.feseis.pbox.server.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import jakarta.validation.Valid;
-import me.feseis.pbox.server.dto.CreateSpecialSenderRequest;
-import me.feseis.pbox.server.dto.SpecialSenderResponse;
-import me.feseis.pbox.server.dto.UpdateSpecialSenderRequest;
+import lombok.RequiredArgsConstructor;
+import me.feseis.pbox.server.dto.common.DeleteResponse;
+import me.feseis.pbox.server.dto.sender.CreateSpecialSenderRequest;
+import me.feseis.pbox.server.dto.sender.SpecialSenderResponse;
+import me.feseis.pbox.server.dto.sender.UpdateSpecialSenderRequest;
 import me.feseis.pbox.server.service.SpecialSenderService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/sms/senders")
+@RequiredArgsConstructor
 public class SpecialSenderController {
 
     private final SpecialSenderService specialSenderService;
 
-    public SpecialSenderController(SpecialSenderService specialSenderService) {
-        this.specialSenderService = specialSenderService;
-    }
     @GetMapping
     public List<SpecialSenderResponse> list() {
         return specialSenderService.listAll();
@@ -38,12 +37,12 @@ public class SpecialSenderController {
 
     @PutMapping
     public SpecialSenderResponse updateSenderName(@Valid @RequestBody UpdateSpecialSenderRequest request) {
-        return specialSenderService.updateSenderName(request.getPhone(), request.getSenderName());
+        return specialSenderService.updateSenderName(request.phone(), request.senderName());
     }
 
     @DeleteMapping
-    public Map<String, Boolean> delete(@RequestParam(value = "phone", required = false) String phone) {
+    public DeleteResponse delete(@RequestParam(value = "phone", required = false) String phone) {
         specialSenderService.delete(phone);
-        return Map.of("deleted", true);
+        return new DeleteResponse(true);
     }
 }

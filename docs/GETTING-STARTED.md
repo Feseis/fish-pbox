@@ -2,7 +2,7 @@
 
 状态：有效（服务端接口与 App 均已实现）
 用途：从零启动 server 与手机端；跑不起来时读。
-更新时间：2026-11-02
+更新时间：2026-11-03
 
 ## 1 前置
 
@@ -50,6 +50,7 @@ PBOX_DB_PASSWORD=******
 - 「记录」页每秒拉取一次短信，点击条目标已读，右上「全部已读」批量处理，条目右下「删除」软删除。
 - 「发送」页填接收方手机号与内容即可投递；可发给自己验证闭环。只落库，不发真实短信。
 - 顶部「更换」可回到配置页，改地址或手机号后重新校验。
+- 可多台手机同时连接同一台 server；每台手机使用自己的已登记号码，服务端不绑定设备。
 
 ## 6 验收
 
@@ -61,14 +62,15 @@ curl -X POST http://{ip}:8080/sms/senders -H "Content-Type: application/json" -d
 curl -X PUT http://{ip}:8080/sms/senders -H "Content-Type: application/json" -d '{"phone":"13800138000","senderName":"新名称"}'
 curl http://{ip}:8080/sms/senders
 curl -X DELETE "http://{ip}:8080/sms/senders?phone=13800138000"
-curl -X POST http://{ip}:8080/sms/send -H "Content-Type: application/json" -d '{"senderPhone":"13800138000","apiCode":"ps_xxxxxxxx","receiverPhone":"13900139000","content":"123456","messageType":"CODE"}'
+curl -X POST http://{ip}:8080/sms/send -H "Content-Type: application/json" -d '{"senderPhone":"13800138000","receiverPhone":"13900139000","content":"普通短信"}'
+curl -X POST http://{ip}:8080/sms/send-api -H "Content-Type: application/json" -d '{"apiCode":"ps_xxxxxxxx","receiverPhone":"13900139000","content":"验证码"}'
 curl "http://{ip}:8080/sms/messages?receiverPhone=13900139000&afterId=0"
 curl -X POST http://{ip}:8080/sms/messages/read -H "Content-Type: application/json" -d '{"receiverPhone":"13900139000","lastId":12}'
 curl -X DELETE "http://{ip}:8080/sms/messages/12?receiverPhone=13900139000"
 curl http://{ip}:8080/sms/health
 ```
 
-注册接口返回 200 与 `apiCode`；同一手机号重复注册返回 200 与首次登记的记录，不再报 409。手机号注册重复调用同样返回 200 且只保留一行；格式不符返回 400，删除未登记号码返回 404。修改名称用 `PUT`，手机号未登记返回 404。管理页只做沙盒手机号与特殊发送方管理；发送短信与短信记录在 App 内。普通用户投递可省略 `apiCode`，特殊发送方填注册返回的代码。第二次轮询不应重复返回同一条记录。
+注册接口返回 200 与 `apiCode`；同一手机号重复注册返回 200 与首次登记的记录，不再报 409。手机号注册重复调用同样返回 200 且只保留一行；格式不符返回 400，删除未登记号码返回 404。修改名称用 `PUT`，手机号未登记返回 404。管理页只做沙盒手机号与特殊发送方管理；发送短信与短信记录在 App 内。普通用户投递走 `/sms/send`，特殊发送方用注册返回的代码走 `/sms/send-api`；两个接口的渠道固定，请求体不填 `messageType`。第二次轮询不应重复返回同一条记录。
 
 ## 7 排障
 

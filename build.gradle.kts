@@ -6,7 +6,7 @@ plugins {
 
 subprojects {
     group = "me.feseis.pbox"
-    version = "1.0-SNAPSHOT"
+    version = "0.0.2"
 
     repositories {
         maven("https://maven.aliyun.com/repository/public")

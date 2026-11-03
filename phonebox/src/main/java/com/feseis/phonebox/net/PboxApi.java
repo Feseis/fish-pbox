@@ -52,7 +52,6 @@ public final class PboxApi {
             body.put("senderPhone", senderPhone);
             body.put("receiverPhone", receiverPhone);
             body.put("content", content);
-            body.put("messageType", "TEXT");
         } catch (JSONException exception) {
             throw new ApiException("请求数据异常");
         }

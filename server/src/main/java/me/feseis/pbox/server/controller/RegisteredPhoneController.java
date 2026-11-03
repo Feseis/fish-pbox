@@ -1,10 +1,12 @@
 package me.feseis.pbox.server.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import jakarta.validation.Valid;
-import me.feseis.pbox.server.dto.RegisterPhoneRequest;
+import lombok.RequiredArgsConstructor;
+import me.feseis.pbox.server.dto.common.DeleteResponse;
+import me.feseis.pbox.server.dto.phone.RegisterPhoneRequest;
+import me.feseis.pbox.server.dto.phone.RegisteredPhoneResponse;
 import me.feseis.pbox.server.service.RegisteredPhoneService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,13 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/sms/phones")
+@RequiredArgsConstructor
 public class RegisteredPhoneController {
 
     private final RegisteredPhoneService registeredPhoneService;
-
-    public RegisteredPhoneController(RegisteredPhoneService registeredPhoneService) {
-        this.registeredPhoneService = registeredPhoneService;
-    }
 
     @GetMapping
     public List<String> list() {
@@ -30,14 +29,13 @@ public class RegisteredPhoneController {
     }
 
     @PostMapping
-    public Map<String, String> register(@Valid @RequestBody RegisterPhoneRequest request) {
-        String phone = registeredPhoneService.register(request.getPhone());
-        return Map.of("phone", phone);
+    public RegisteredPhoneResponse register(@Valid @RequestBody RegisterPhoneRequest request) {
+        return new RegisteredPhoneResponse(registeredPhoneService.register(request.phone()));
     }
 
     @DeleteMapping
-    public Map<String, Boolean> delete(@RequestParam(value = "phone", required = false) String phone) {
+    public DeleteResponse delete(@RequestParam(value = "phone", required = false) String phone) {
         registeredPhoneService.delete(phone);
-        return Map.of("deleted", true);
+        return new DeleteResponse(true);
     }
 }

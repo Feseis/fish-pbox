@@ -19,6 +19,9 @@ public interface SpecialSenderMapper {
     @Select("SELECT phone, sender_name, api_code FROM special_sender WHERE phone = #{phone}")
     SpecialSender findByPhone(@Param("phone") String phone);
 
+    @Select("SELECT phone, sender_name, api_code FROM special_sender WHERE api_code = #{apiCode}")
+    SpecialSender findByApiCode(@Param("apiCode") String apiCode);
+
     @Select("SELECT api_code FROM special_sender WHERE phone = #{phone}")
     String findApiCodeByPhone(@Param("phone") String phone);
 

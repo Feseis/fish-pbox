@@ -113,9 +113,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.Holder> 
         holder.tvContent.setText(message.content);
         holder.tvContent.setTypeface(null, message.receiverRead ? Typeface.NORMAL : Typeface.BOLD);
         holder.dotUnread.setVisibility(message.receiverRead ? View.GONE : View.VISIBLE);
-        holder.tvType.setText("CODE".equals(message.messageType)
-                ? R.string.type_code
-                : R.string.type_text);
+        holder.tvType.setText("API".equals(message.messageType)
+                ? R.string.type_api
+                : R.string.type_user);
 
         holder.itemView.setOnClickListener(view -> listener.onMarkRead(message));
         holder.tvDelete.setOnClickListener(view -> listener.onDelete(message));

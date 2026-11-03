@@ -24,8 +24,8 @@
     <string name="action_delete">删除</string>
     <string name="delete_confirm">删除这条短信？</string>
     <string name="cancel">取消</string>
-    <string name="type_code">验证码</string>
-    <string name="type_text">普通短信</string>
+    <string name="type_api">接口发送</string>
+    <string name="type_user">用户发送</string>
 
     <string name="error_phone">请输入正确的 11 位手机号</string>
     <string name="error_content">请输入短信内容</string>

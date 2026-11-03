@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/pbox-logo.jpg" alt="pbox" width="150"></p>
+
 # pbox · 手机短信沙盒
 
 > 第三方把短信投递到本地 server 落库，手机 App 每秒轮询取走。
@@ -8,16 +10,16 @@ pbox 是一个**局域网内自托管**的手机短信沙盒：业务系统通�
 ## 特性
 
 - **短信投递 / 轮询 / 已读 / 软删除**完整闭环，只落库不发真短信
-- **特殊发送方**：登记手机号后获得 `apiCode`，投递时校验来源，可显示发送方昵称
+- **特殊发送方**：登记手机号后获得 `apiCode`，走 `/sms/send-api` 投递时校验来源，可显示发送方昵称
 - **沙盒手机号白名单**：只有登记过的号码才能在 App 中使用
 - **自带 Web 管理页**：浏览器打开 `http://{ip}:8080/` 即可注册手机号、管理发送方
 - **游标增量拉取**：`afterId` 续传，重复轮询不会重复消费，断线可接续
-- **1 台 server 对 1 台手机**，无需公网、无需推送服务
+- **局域网内多台手机可接入**，按已登记手机号收信，无需公网、无需推送服务
 
 ## 工作原理
 
 ```text
-第三方 / 业务系统 ──POST /sms/send──▶  pbox-server (8080)  ──▶  MySQL 8
+第三方 / 业务系统 ──POST /sms/send·send-api──▶  pbox-server (8080)  ──▶  MySQL 8
                                               ▲
                         Android App ──GET /sms/messages（每 1 秒）──┘
 ```
@@ -124,7 +126,8 @@ Get-NetAdapter -Physical | Where-Object Status -eq 'Up' |
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| `POST` | `/sms/send` | 第三方投递短信 |
+| `POST` | `/sms/send` | 手机号用户投递短信（USER 渠道） |
+| `POST` | `/sms/send-api` | 特殊发送方投递短信（API 渠道） |
 | `GET` | `/sms/messages` | App 拉取短信（按 `afterId` 增量） |
 | `POST` | `/sms/messages/read` | 标记已读 |
 | `DELETE` | `/sms/messages/{id}` | 软删除短信 |
@@ -182,8 +185,7 @@ fish-pbox/
 ## 已知限制
 
 - **无鉴权**：首版接口不校验身份，仅限可信局域网使用，**禁止把 8080 暴露到公网**。
-- **1 : 1 部署**：一台 server 对一台手机，设备绑定靠部署约定保证，服务端不做强制校验。
-- **App 图标**仍沿用模板，待替换。
+- **不绑定设备**：局域网内任意能连到 server、且使用已登记手机号的 app 都可接入；准入只靠手机号白名单，服务端不校验请求方是否为号码持有者。
 - **Android 9+ 默认禁止明文 HTTP**：局域网 `http://` 仅适用于调试场景，生产环境需自行配置 HTTPS。
 
 ## 文档

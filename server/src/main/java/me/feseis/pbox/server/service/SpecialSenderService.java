@@ -4,8 +4,9 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 
-import me.feseis.pbox.server.dto.CreateSpecialSenderRequest;
-import me.feseis.pbox.server.dto.SpecialSenderResponse;
+import lombok.RequiredArgsConstructor;
+import me.feseis.pbox.server.dto.sender.CreateSpecialSenderRequest;
+import me.feseis.pbox.server.dto.sender.SpecialSenderResponse;
 import me.feseis.pbox.server.entity.SpecialSender;
 import me.feseis.pbox.server.exp.BusinessException;
 import me.feseis.pbox.server.exp.ErrorCode;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class SpecialSenderService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -23,14 +25,10 @@ public class SpecialSenderService {
 
     private final SpecialSenderMapper specialSenderMapper;
 
-    public SpecialSenderService(SpecialSenderMapper specialSenderMapper) {
-        this.specialSenderMapper = specialSenderMapper;
-    }
-
     @Transactional
     public SpecialSenderResponse register(CreateSpecialSenderRequest request) {
-        String phone = request.getPhone().trim();
-        String senderName = request.getSenderName().trim();
+        String phone = request.phone().trim();
+        String senderName = request.senderName().trim();
 
         if (findApiCodeByPhone(phone) != null) {
             return toResponse(specialSenderMapper.findByPhone(phone));
@@ -67,10 +65,6 @@ public class SpecialSenderService {
         return toResponse(existing);
     }
 
-    public String findApiCodeByPhone(String phone) {
-        return specialSenderMapper.findApiCodeByPhone(phone);
-    }
-
     @Transactional
     public void delete(String phone) {
         if (phone == null || phone.isBlank()) {
@@ -81,6 +75,10 @@ public class SpecialSenderService {
         if (specialSenderMapper.deleteByPhone(normalizedPhone) == 0) {
             throw new BusinessException(ErrorCode.SENDER_NOT_FOUND);
         }
+    }
+
+    private String findApiCodeByPhone(String phone) {
+        return specialSenderMapper.findApiCodeByPhone(phone);
     }
 
     private SpecialSenderResponse toResponse(SpecialSender sender) {

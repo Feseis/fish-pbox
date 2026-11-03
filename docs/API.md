@@ -2,7 +2,7 @@
 
 状态：已实现（手机号、特殊发送方、短信投递/轮询/已读/软删除、健康检查均已可用）
 用途：第三方投递与手机端轮询的唯一对接标准；改接口前读，冲突时以此为准。
-更新时间：2026-11-02
+更新时间：2026-11-03
 
 ## 0 通用
 
@@ -11,7 +11,11 @@
 - 时间格式 ISO-8601，时区 `Asia/Shanghai`。
 - 首版无鉴权，见 README 的「已知限制」。
 
-## 1 投递短信（第三方 → server）
+## 1 投递短信
+
+渠道由接口决定，请求体不再携带 `messageType`；普通用户不可发 `API` 渠道，特殊发送方不可发 `USER` 渠道。
+
+### 1.1 普通用户（USER）
 
 `POST /sms/send`
 
@@ -20,10 +24,41 @@
 ```json
 {
   "senderPhone": "13800138000",
-  "apiCode": "ps_xxxxxxxx",
+  "receiverPhone": "13900139000",
+  "content": "123456"
+}
+```
+
+响应（200）：
+
+```json
+{
+  "id": 12,
+  "senderPhone": "13800138000",
+  "senderName": null,
   "receiverPhone": "13900139000",
   "content": "123456",
-  "messageType": "CODE"
+  "messageType": "USER",
+  "receiverRead": false,
+  "createdAt": "2026-11-02T12:00:00+08:00"
+}
+```
+
+- `senderPhone`、`receiverPhone` 为 11 位手机号；`content` 非空，≤1024。
+- 固定落库 `message_type=USER`，`senderName` 恒为 `null`。
+- 参数不合法返回 400 `INVALID_ARGUMENT`；只落库，不触发真实短信下发。
+
+### 1.2 特殊发送方（API）
+
+`POST /sms/send-api`
+
+请求：
+
+```json
+{
+  "apiCode": "ps_xxxxxxxx",
+  "receiverPhone": "13900139000",
+  "content": "123456"
 }
 ```
 
@@ -36,16 +71,16 @@
   "senderName": "测试发送方",
   "receiverPhone": "13900139000",
   "content": "123456",
-  "messageType": "CODE",
+  "messageType": "API",
   "receiverRead": false,
   "createdAt": "2026-11-02T12:00:00+08:00"
 }
 ```
 
-- `senderPhone`、`receiverPhone` 非空，≤20；`content` 非空，≤1024；`messageType` 取 `CODE`（验证码）或 `TEXT`（普通短信）。
-- `apiCode` 可选。有值时查 `special_sender`：不存在或与 `senderPhone` 不匹配返回 403 `INVALID_API_CODE`；匹配则记录 `sender_api_code` 并返回 `senderName`。
-- 无 `apiCode` 时 `sender_api_code` 存 `NULL`，`senderName` 为 `null`，按普通用户处理。
-- 只落库，不触发真实短信下发；参数不合法返回 400 `INVALID_ARGUMENT`。
+- `apiCode` 非空，≤64；`receiverPhone` 为 11 位手机号；`content` 非空，≤1024。
+- 服务端按 `apiCode` 一次查出 `special_sender`，以该记录的 `phone` 作为 `senderPhone`；不存在返回 403 `INVALID_API_CODE`。
+- 固定落库 `message_type=API`；返回的 `senderName` 按发送方手机号实时关联，不存快照。
+- 参数不合法返回 400 `INVALID_ARGUMENT`；只落库，不触发真实短信下发。
 
 ## 2 注册特殊发送方
 
@@ -70,7 +105,7 @@
 - `phone` 非空，≤20 字符，登记后唯一；`senderName` 非空，≤64 字符。
 - 服务端生成 `apiCode`：`ps_` + 24 字节随机数的 Base64URL 串，共 35 字符。
 - 入库三字段后返回；同一手机号重复注册：200，返回首次登记的 `senderName` 与 `apiCode`，不重复插入。
-- `apiCode` 供 `/sms/send` 识别特殊发送方。
+- `apiCode` 供 `/sms/send-api` 识别特殊发送方。
 
 ### 2.1 修改发送方名称
 
@@ -135,7 +170,7 @@
 - `afterId` 可省略，默认 0；只返回 `id > afterId` 且 `deleted_at IS NULL` 的记录，按 `id` 升序。
 - 建议每 1 秒调用一次；可选 `limit`，默认 20、最大 100。
 - 无新消息时 `messages` 为空数组，`lastId` 等于请求的 `afterId`。
-- 返回 `senderName` 由 `special_sender` 关联得到，不返回 `sender_api_code`。
+- 返回 `senderName` 由 `special_sender` 按发送方手机号关联得到；仅 `API` 渠道有昵称。
 
 响应（200）：
 
@@ -148,7 +183,7 @@
       "senderName": "测试发送方",
       "receiverPhone": "13900139000",
       "content": "123456",
-      "messageType": "CODE",
+      "messageType": "API",
       "receiverRead": false,
       "readAt": null,
       "createdAt": "2026-11-02T12:00:00+08:00"
@@ -234,8 +269,8 @@
 
 | code | HTTP | 场景 |
 | --- | --- | --- |
-| `INVALID_ARGUMENT` | 400 | 手机号/内容为空或超长，`messageType` 非法，`afterId` 非法 |
-| `INVALID_API_CODE` | 403 | `apiCode` 不存在或与 `senderPhone` 不匹配 |
+| `INVALID_ARGUMENT` | 400 | 手机号/内容为空或超长，`afterId` 非法 |
+| `INVALID_API_CODE` | 403 | `apiCode` 不存在 |
 | `SENDER_ALREADY_EXISTS` | 409 | 并发重复登记时唯一约束兜底；正常重复请求返回 200 |
 | `SENDER_NOT_FOUND` | 404 | 修改名称时手机号未登记 |
 | `PHONE_NOT_FOUND` | 404 | 删除沙盒手机号时未登记 |
@@ -256,6 +291,7 @@
 | `DELETE /sms/phones` | 已实现 |
 | `sms_message` 表 | 已建 |
 | `POST /sms/send` | 已实现 |
+| `POST /sms/send-api` | 已实现 |
 | `GET /sms/messages` | 已实现 |
 | `POST /sms/messages/read` | 已实现 |
 | `DELETE /sms/messages/{id}` | 已实现 |

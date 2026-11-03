@@ -14,26 +14,26 @@ import org.apache.ibatis.annotations.Update;
 public interface SmsMessageMapper {
 
     @Insert("""
-            INSERT INTO sms_message (sender_phone, sender_api_code, receiver_phone, content, message_type)
-            VALUES (#{senderPhone}, #{senderApiCode}, #{receiverPhone}, #{content}, #{messageType})
+            INSERT INTO sms_message (sender_phone, receiver_phone, content, message_type)
+            VALUES (#{senderPhone}, #{receiverPhone}, #{content}, #{messageType})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(SmsMessage message);
 
     @Select("""
-            SELECT m.id, m.sender_phone, m.sender_api_code, m.receiver_phone, m.content, m.message_type,
-                   m.receiver_read, m.read_at, m.deleted_at, m.created_at, s.sender_name
+            SELECT m.id, m.sender_phone, m.receiver_phone, m.content, m.message_type,
+                   m.read_at, m.created_at, s.sender_name
             FROM sms_message m
-            LEFT JOIN special_sender s ON s.api_code = m.sender_api_code
+            LEFT JOIN special_sender s ON m.message_type = 'API' AND s.phone = m.sender_phone
             WHERE m.id = #{id}
             """)
-    SmsMessage findById(@Param("id") Long id);
+    SmsMessage findById(@Param("id") long id);
 
     @Select("""
-            SELECT m.id, m.sender_phone, m.sender_api_code, m.receiver_phone, m.content, m.message_type,
-                   m.receiver_read, m.read_at, m.deleted_at, m.created_at, s.sender_name
+            SELECT m.id, m.sender_phone, m.receiver_phone, m.content, m.message_type,
+                   m.read_at, m.created_at, s.sender_name
             FROM sms_message m
-            LEFT JOIN special_sender s ON s.api_code = m.sender_api_code
+            LEFT JOIN special_sender s ON m.message_type = 'API' AND s.phone = m.sender_phone
             WHERE m.receiver_phone = #{receiverPhone}
               AND m.deleted_at IS NULL
               AND m.id > #{afterId}
@@ -46,10 +46,10 @@ public interface SmsMessageMapper {
 
     @Update("""
             UPDATE sms_message
-            SET receiver_read = 1, read_at = NOW(3)
+            SET read_at = NOW(3)
             WHERE receiver_phone = #{receiverPhone}
               AND id <= #{lastId}
-              AND receiver_read = 0
+              AND read_at IS NULL
               AND deleted_at IS NULL
             """)
     int markRead(@Param("receiverPhone") String receiverPhone, @Param("lastId") long lastId);
@@ -61,7 +61,7 @@ public interface SmsMessageMapper {
               AND receiver_phone = #{receiverPhone}
               AND deleted_at IS NULL
             """)
-    int softDelete(@Param("id") Long id, @Param("receiverPhone") String receiverPhone);
+    int softDelete(@Param("id") long id, @Param("receiverPhone") String receiverPhone);
 
     @Select("SELECT 1")
     int ping();

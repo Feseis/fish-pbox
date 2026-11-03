@@ -72,7 +72,7 @@
                 android:layout_weight="1"
                 android:textColor="@color/pbox_muted"
                 android:textSize="12sp"
-                tools:text="普通短信" />
+                tools:text="用户发送" />
 
             <TextView
                 android:id="@+id/tv_delete"

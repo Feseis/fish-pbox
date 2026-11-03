@@ -3,6 +3,7 @@ package me.feseis.pbox.server.service;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import lombok.RequiredArgsConstructor;
 import me.feseis.pbox.server.exp.BusinessException;
 import me.feseis.pbox.server.exp.ErrorCode;
 import me.feseis.pbox.server.mapper.RegisteredPhoneMapper;
@@ -11,15 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class RegisteredPhoneService {
 
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
     private final RegisteredPhoneMapper registeredPhoneMapper;
-
-    public RegisteredPhoneService(RegisteredPhoneMapper registeredPhoneMapper) {
-        this.registeredPhoneMapper = registeredPhoneMapper;
-    }
 
     @Transactional
     public String register(String phone) {

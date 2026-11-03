@@ -4,70 +4,48 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
-import me.feseis.pbox.server.dto.MarkReadRequest;
-import me.feseis.pbox.server.dto.MessageListResponse;
-import me.feseis.pbox.server.dto.SendSmsRequest;
-import me.feseis.pbox.server.dto.SmsMessageResponse;
+import lombok.RequiredArgsConstructor;
+import me.feseis.pbox.server.dto.sms.MarkReadRequest;
+import me.feseis.pbox.server.dto.sms.MessageListResponse;
+import me.feseis.pbox.server.dto.sms.SendSmsByApiRequest;
+import me.feseis.pbox.server.dto.sms.SendSmsByUserRequest;
+import me.feseis.pbox.server.dto.sms.SmsMessageResponse;
 import me.feseis.pbox.server.entity.SmsMessage;
 import me.feseis.pbox.server.entity.SpecialSender;
 import me.feseis.pbox.server.exp.BusinessException;
 import me.feseis.pbox.server.exp.ErrorCode;
 import me.feseis.pbox.server.mapper.SmsMessageMapper;
 import me.feseis.pbox.server.mapper.SpecialSenderMapper;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class SmsMessageService {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
-    private static final Set<String> MESSAGE_TYPES = Set.of("CODE", "TEXT");
     private static final int MAX_LIMIT = 100;
+    private static final String TYPE_USER = "USER";
+    private static final String TYPE_API = "API";
 
     private final SmsMessageMapper smsMessageMapper;
     private final SpecialSenderMapper specialSenderMapper;
 
-    public SmsMessageService(SmsMessageMapper smsMessageMapper, SpecialSenderMapper specialSenderMapper) {
-        this.smsMessageMapper = smsMessageMapper;
-        this.specialSenderMapper = specialSenderMapper;
+    @Transactional
+    public SmsMessageResponse sendByUser(SendSmsByUserRequest request) {
+        return save(request.senderPhone().trim(), request.receiverPhone().trim(),
+                request.content().trim(), TYPE_USER);
     }
 
     @Transactional
-    public SmsMessageResponse send(SendSmsRequest request) {
-        String senderPhone = request.getSenderPhone().trim();
-        String receiverPhone = request.getReceiverPhone().trim();
-        String content = request.getContent().trim();
-        String messageType = request.getMessageType().trim().toUpperCase(Locale.ROOT);
-
-        if (!MESSAGE_TYPES.contains(messageType)) {
-            throw new BusinessException(ErrorCode.INVALID_ARGUMENT);
+    public SmsMessageResponse sendByApi(SendSmsByApiRequest request) {
+        SpecialSender sender = specialSenderMapper.findByApiCode(request.apiCode().trim());
+        if (sender == null) {
+            throw new BusinessException(ErrorCode.INVALID_API_CODE);
         }
-
-        String apiCode = normalizeApiCode(request.getApiCode());
-        if (apiCode != null) {
-            SpecialSender sender = specialSenderMapper.findByPhone(senderPhone);
-            if (sender == null || !sender.getApiCode().equals(apiCode)) {
-                throw new BusinessException(ErrorCode.INVALID_API_CODE);
-            }
-        }
-
-        SmsMessage message = new SmsMessage();
-        message.setSenderPhone(senderPhone);
-        message.setSenderApiCode(apiCode);
-        message.setReceiverPhone(receiverPhone);
-        message.setContent(content);
-        message.setMessageType(messageType);
-        smsMessageMapper.insert(message);
-
-        SmsMessage saved = smsMessageMapper.findById(message.getId());
-        if (saved == null) {
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
-        }
-        return toResponse(saved);
+        return save(sender.getPhone(), request.receiverPhone().trim(),
+                request.content().trim(), TYPE_API);
     }
 
     public MessageListResponse list(String receiverPhone, long afterId, int limit) {
@@ -89,32 +67,31 @@ public class SmsMessageService {
 
     @Transactional
     public int markRead(MarkReadRequest request) {
-        String phone = requirePhone(request.getReceiverPhone());
-        return smsMessageMapper.markRead(phone, request.getLastId());
+        String phone = requirePhone(request.receiverPhone());
+        return smsMessageMapper.markRead(phone, request.lastId());
     }
 
     @Transactional
-    public void delete(Long id, String receiverPhone) {
+    public void delete(long id, String receiverPhone) {
         String phone = requirePhone(receiverPhone);
         if (smsMessageMapper.softDelete(id, phone) == 0) {
             throw new BusinessException(ErrorCode.MESSAGE_NOT_FOUND);
         }
     }
 
-    public void checkDatabase() {
-        try {
-            smsMessageMapper.ping();
-        } catch (DataAccessException exception) {
-            throw new BusinessException(ErrorCode.DB_UNAVAILABLE);
-        }
-    }
+    private SmsMessageResponse save(String senderPhone, String receiverPhone, String content, String messageType) {
+        SmsMessage message = new SmsMessage();
+        message.setSenderPhone(senderPhone);
+        message.setReceiverPhone(receiverPhone);
+        message.setContent(content);
+        message.setMessageType(messageType);
+        smsMessageMapper.insert(message);
 
-    private String normalizeApiCode(String apiCode) {
-        if (apiCode == null) {
-            return null;
+        SmsMessage saved = smsMessageMapper.findById(message.getId());
+        if (saved == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
-        String normalized = apiCode.trim();
-        return normalized.isEmpty() ? null : normalized;
+        return toResponse(saved);
     }
 
     private String requirePhone(String receiverPhone) {
@@ -132,7 +109,7 @@ public class SmsMessageService {
                 message.getReceiverPhone(),
                 message.getContent(),
                 message.getMessageType(),
-                Boolean.TRUE.equals(message.getReceiverRead()),
+                message.getReadAt() != null,
                 toOffset(message.getReadAt()),
                 toOffset(message.getCreatedAt()));
     }
