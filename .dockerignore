@@ -1,0 +1,23 @@
+.git
+.gradle
+.kotlin
+.idea
+.vscode
+.ai
+AGENTS.md
+
+build/
+**/build/
+
+# 本地环境变量（含数据库密码），容器内由 compose 注入
+a_run_env/
+
+local.properties
+captures/
+.cxx/
+.externalNativeBuild/
+
+*.apk
+*.aab
+*.log
+*.hprof
