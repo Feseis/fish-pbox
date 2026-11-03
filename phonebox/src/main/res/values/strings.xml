@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">pbox</string>
+
+    <string name="setup_title">pbox</string>
+    <string name="setup_subtitle">连接短信沙盒服务器</string>
+    <string name="label_server">服务器地址</string>
+    <string name="hint_server">例如 192.168.2.35:8080</string>
+    <string name="label_phone">我的手机号</string>
+    <string name="hint_phone">请输入已在网页端注册的 11 位手机号</string>
+    <string name="action_connect">连接</string>
+    <string name="action_connecting">连接中…</string>
+
+    <string name="tab_record">记录</string>
+    <string name="tab_send">发送</string>
+    <string name="action_switch">更换</string>
+    <string name="label_receiver">接收方手机号</string>
+    <string name="hint_receiver">11 位手机号</string>
+    <string name="hint_content">短信内容</string>
+    <string name="action_send">发送</string>
+    <string name="send_hint">仅写入沙盒数据库，不发送真实短信。</string>
+    <string name="refresh_ok">每 1 秒自动刷新</string>
+    <string name="empty_messages">暂无短信</string>
+    <string name="action_mark_all_read">全部已读</string>
+    <string name="action_delete">删除</string>
+    <string name="delete_confirm">删除这条短信？</string>
+    <string name="cancel">取消</string>
+    <string name="type_code">验证码</string>
+    <string name="type_text">普通短信</string>
+
+    <string name="error_phone">请输入正确的 11 位手机号</string>
+    <string name="error_content">请输入短信内容</string>
+    <string name="error_server">服务器地址格式不正确，例如 192.168.2.35:8080</string>
+    <string name="error_unregistered">该手机号未在网页端注册</string>
+    <string name="sent">已发送</string>
+    <string name="unread_prefix">未读 </string>
+    <string name="local_phone_prefix">本机：</string>
+    <string name="refresh_failed_prefix">刷新失败：</string>
+</resources>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pbox · 管理端</title>
+  <link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">P</div>
+        <div>
+          <h1>pbox 管理端</h1>
+          <p class="subtitle">短信沙盒 · 手机号与特殊发送方</p>
+        </div>
+      </div>
+      <div class="server-badge" title="当前服务地址">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="server-url">-</span>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="管理模块">
+      <button
+        id="tab-phones"
+        class="tab active"
+        type="button"
+        role="tab"
+        data-panel="phones"
+        aria-selected="true">手机号</button>
+      <button
+        id="tab-senders"
+        class="tab"
+        type="button"
+        role="tab"
+        data-panel="senders"
+        aria-selected="false">特殊发送方</button>
+    </nav>
+
+    <section id="panel-phones" class="panel" role="tabpanel" aria-labelledby="tab-phones">
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>注册手机号</h2>
+          <p class="card-subtitle">只有在此登记的手机号，才能在 App 中使用。</p>
+        </div>
+      </div>
+      <form id="phone-form" class="register-form" autocomplete="off">
+        <div class="field">
+          <label for="app-phone">手机号</label>
+          <input id="app-phone" name="phone" type="tel" maxlength="11" placeholder="例如 13800138000" required />
+        </div>
+        <button id="phone-register-btn" class="btn primary" type="submit">注册</button>
+      </form>
+      <p class="hint">手机号需为 11 位（1 开头、第二位 3-9）；重复注册不会新增记录。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>已注册手机号 <span id="phone-count" class="count">0</span></h2>
+          <p class="card-subtitle">删除后该手机号将无法继续在 App 使用。</p>
+        </div>
+        <button id="phone-refresh-btn" class="btn ghost" type="button">刷新</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="sender-table">
+          <thead>
+            <tr>
+              <th>手机号</th>
+              <th class="action-col">操作</th>
+            </tr>
+          </thead>
+          <tbody id="phones-body">
+            <tr><td colspan="2" class="loading-cell">加载中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </section>
+
+    <section
+      id="panel-senders"
+      class="panel"
+      role="tabpanel"
+      aria-labelledby="tab-senders"
+      hidden>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>注册发送方</h2>
+          <p class="card-subtitle">登记手机号与名称，服务端生成 API 代码。</p>
+        </div>
+      </div>
+      <form id="register-form" class="register-form" autocomplete="off">
+        <div class="field">
+          <label for="phone">手机号</label>
+          <input id="phone" name="phone" type="text" maxlength="20" placeholder="例如 13800138000" required />
+        </div>
+        <div class="field">
+          <label for="sender-name">发送方名称</label>
+          <input id="sender-name" name="senderName" type="text" maxlength="64" placeholder="例如 测试发送方" required />
+        </div>
+        <button id="register-btn" class="btn primary" type="submit">注册</button>
+      </form>
+      <p class="hint">同一手机号重复注册会直接返回已有的 API 代码，不会新增记录。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>已登记发送方 <span id="sender-count" class="count">0</span></h2>
+          <p class="card-subtitle">API 代码用于第三方投递，请妥善保管。</p>
+        </div>
+        <button id="refresh-btn" class="btn ghost" type="button">刷新</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="sender-table">
+          <thead>
+            <tr>
+              <th>手机号</th>
+              <th>名称</th>
+              <th>API 代码</th>
+              <th class="action-col">操作</th>
+            </tr>
+          </thead>
+          <tbody id="senders-body">
+            <tr><td colspan="4" class="loading-cell">加载中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </section>
+
+    <footer class="footer">pbox · 同一局域网内 1 台 server 对 1 台手机</footer>
+  </main>
+
+  <dialog id="rename-dialog" class="dialog">
+    <form id="rename-form">
+      <h3>修改发送方名称</h3>
+      <p class="dialog-subtitle" id="rename-phone"></p>
+      <div class="field">
+        <label for="rename-name">新名称</label>
+        <input id="rename-name" type="text" maxlength="64" required />
+      </div>
+      <div class="dialog-actions">
+        <button id="rename-cancel" class="btn ghost" type="button">取消</button>
+        <button id="rename-save" class="btn primary" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
